@@ -10,10 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Aspect
 public class LogoutVerify {
 
-    @Autowired
-
-
-
     public void verify(){
 
     }
