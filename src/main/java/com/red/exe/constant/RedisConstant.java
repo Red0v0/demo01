@@ -8,8 +8,6 @@ package com.red.exe.constant;
  */
 public interface RedisConstant {
 
-    String TOKEN_PREFIX = "token_";
-
     /**两小时*/
     Integer EXPIRE = 7200;
 }

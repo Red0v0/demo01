@@ -1,20 +1,16 @@
 package com.red.exe.controller;
 
-import com.red.exe.constant.CookieConstant;
-import com.red.exe.constant.RedisConstant;
 import com.red.exe.pojo.User;
 import com.red.exe.service.UserService;
-import com.red.exe.utils.CookieUtil;
+import com.red.exe.utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
+import java.util.HashMap;
+import java.util.Map;
 
 
 /**
@@ -36,38 +32,36 @@ public class UserController {
     }
 
     @GetMapping("/login")
-    /**@Cacheable(cacheNames = "username", key = "#username")*/
-    public String login(@RequestParam String username,
-                        @RequestParam String password,
-                        HttpServletResponse response) {
-        User user = userService.login(username, password);
-        if (user == null) {
-            return "登陆失败，登陆信息不正确";
-        }
-        /**设置token至redis*/
-        String token = UUID.randomUUID().toString();
-        int expire = RedisConstant.EXPIRE;
-        redisTemplate.opsForValue().set("token_" + token, username, expire, TimeUnit.SECONDS);
-        /**设置cookie*/
-        CookieUtil.set(response, CookieConstant.TOKEN, token, expire);
+    public Map<String, Object> login(@RequestParam String username,
+                                     @RequestParam String password) {
+        userService.login(username, password);
+        HashMap<String, Object> map = new HashMap<>();
+        map.put("status", true);
+        map.put("msg", "登陆成功");
+        return map;
+    }
+
+    @GetMapping("/test")
+    public String test(HttpServletRequest request) {
+        String token = request.getHeader("token");
+        JwtUtils.verify(token);
         return "success";
     }
 
     @GetMapping("/logout")
-    public String logout(HttpServletRequest request,
-                         HttpServletResponse response) {
-        /**1.从cookie里查询*/
-        Cookie cookie = CookieUtil.get(request, CookieConstant.TOKEN);
-        if (cookie != null) {
-            /**清除redis*/
-            redisTemplate.opsForValue().getOperations().delete("token_" + cookie.getValue());
-            /**清除cookie*/
-            CookieUtil.set(response, CookieConstant.TOKEN, null, 0);
-            return "登出成功";
-        } else {
-            return "登出失败，您没有登陆";
+    public Map<String, Object> logout(@RequestParam String username,
+                                      HttpServletResponse response) {
+        String s = redisTemplate.opsForValue().get("token_" + username);
+        HashMap<String, Object> map = new HashMap<>();
+        if (s != null){
+            redisTemplate.opsForValue().getOperations().delete("token_" + username);
+            map.put("status", response.getStatus());
+            map.put("msg", "登出成功");
+        }else {
+            map.put("status", response.getStatus());
+            map.put("msg","登出失败，您还未登录");
         }
-
+        return map;
     }
 
 }

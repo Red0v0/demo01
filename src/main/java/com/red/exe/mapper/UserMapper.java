@@ -26,7 +26,7 @@ public interface UserMapper {
      * @param password 密码
      * @return User 实体User
      */
-    @Select("select username,password from user " +
+    @Select("select id,username,password from user " +
             "where username=#{username} and password=#{password}")
     User findOne(String username,String password);
 }
